@@ -11,12 +11,16 @@
     global.console.log('onError: ' + error);
   };      
   var slice = function(file, options) {
-    options = options || {};
+    var onSlice,
+        onError,
+        fileSize, 
+        size, 
+        sliceIndex,
+        sliceCount, 
+        reader, 
+        position,
+        readNextSlice;
     
-    var onSlice = (options.onSlice || defaultOnSlice),
-        onError = (options.onError || defaultOnError),
-        fileSize, size, sliceCount, reader, position;
-
     try {
       fileSize = file.size;
     } catch (fileReadError) {
@@ -25,12 +29,15 @@
       return;
     }
     
+    options = (options || {});
+    onSlice = (options.onSlice || defaultOnSlice);
+    onError = (options.onError || defaultOnError);
     size = (options.size || fileSize);
+    sliceIndex = -1;
     sliceCount = Math.ceil(fileSize / size);
     reader = new FileReader();
     position = 0;
-    
-    var readNextSlice = function() {
+    readNextSlice = function() {
       var start = position;
       
       if (start >= fileSize) {
@@ -53,9 +60,11 @@
       var slice;
       
       if (event.target.readyState == FileReader.DONE) {
+        ++sliceIndex;
         slice = {data: event.target.result, 
                  next: readNextSlice,
-                 sliceCount: sliceCount};
+                 index: sliceIndex,
+                 total: sliceCount};
         onSlice(slice);                       
       }
     };
