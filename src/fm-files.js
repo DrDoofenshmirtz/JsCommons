@@ -103,7 +103,10 @@
           aborted = true;
           onSlice = ignoreEvent;
           onError = ignoreEvent;
-          reader.abort();
+          
+          try {
+            reader.abort();
+          } catch (ignored) {}
         }
       };  
     })();
