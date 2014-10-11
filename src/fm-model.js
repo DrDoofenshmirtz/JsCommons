@@ -87,10 +87,46 @@
   };
   
   makeModel = function(attributes) {
-    var listeners = [],
-        model = Object.create(null);
+    var updates = [],
+        listeners = [],
+        model = Object.create(null),
+        emitEvents,
+        applyUpdates;
  
     attributes = (attributes || Object.create(null));
+    emitEvents = function(transaction) {
+      var changeEvent,
+          oldValue,
+          newValue;
+
+      changeEvent = makeChangeEvent();
+      
+      Object.keys(transaction.changes).forEach(function(name) {
+        oldValue = attributes[name];
+        newValue = transaction.changes[name];
+        attributes[name] = newValue;
+        changeEvent.changes[name] = makeChange(name, oldValue, newValue);
+      });
+      
+      transaction.events.unshift(changeEvent);
+      
+      listeners.forEach(function(listener) {
+        listener(transaction.events.slice(), model);
+      });
+    };
+    applyUpdates = function() {
+      var transaction,
+          update;
+          
+      if (updates.length > 0) {
+        update = updates[0];
+        transaction = makeTransaction(attributes);
+        update(transaction.context);
+        emitEvents(transaction);
+        updates.shift();
+        applyUpdates();
+      }  
+    };
     model.get = function(name) {
       if (name) {
         return attributes[name];
@@ -98,29 +134,9 @@
       
       return attributes;
     };
-    model.update = function(updater) {
-      var transaction,
-          name,
-          oldValue,
-          newValue,
-          changeEvent,
-          index;
-      
-      transaction = makeTransaction(attributes);
-      updater(transaction.context);
-      changeEvent = makeChangeEvent();
-      
-      for (name in transaction.changes) {
-        oldValue = attributes[name];
-        newValue = transaction.changes[name];
-        attributes[name] = newValue;
-        changeEvent.changes[name] = makeChange(name, oldValue, newValue);
-      }
-      
-      transaction.events.unshift(changeEvent);
-      
-      for (index = 0; index < listeners.length; ++index) {
-        listeners[index](transaction.events.slice(), model);
+    model.update = function(update) {
+      if (updates.push(update) === 1) {
+        applyUpdates();  
       }
     };
     model.addListener = function(listener) {
