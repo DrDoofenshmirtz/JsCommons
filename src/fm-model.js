@@ -110,7 +110,7 @@
       
       transaction.events.unshift(changeEvent);
       
-      listeners.forEach(function(listener) {
+      listeners.slice().forEach(function(listener) {
         listener(transaction.events.slice(), model);
       });
     };
