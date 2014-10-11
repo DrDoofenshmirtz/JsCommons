@@ -90,11 +90,11 @@
     var updates = [],
         listeners = [],
         model = Object.create(null),
-        emitEvents,
+        applyChanges,
         applyUpdates;
  
     attributes = (attributes || Object.create(null));
-    emitEvents = function(transaction) {
+    applyChanges = function(transaction) {
       var changeEvent,
           oldValue,
           newValue;
@@ -122,7 +122,7 @@
         update = updates[0];
         transaction = makeTransaction(attributes);
         update(transaction.context);
-        emitEvents(transaction);
+        applyChanges(transaction);
         updates.shift();
         applyUpdates();
       }  
